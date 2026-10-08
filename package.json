@@ -1,0 +1,22 @@
+{
+  "name": "bot-2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fazeel321/fazeel_bot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/fazeel321/fazeel_bot/issues"
+  },
+  "homepage": "https://github.com/fazeel321/fazeel_bot#readme"
+}

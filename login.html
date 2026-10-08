@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login — StreamFinder</title>
+<style>
+  :root {
+    --bg:#f4f6f9; --surface:#ffffff; --border:#dfe5ec; --border-strong:#c5ced9;
+    --text:#172033; --muted:#5f6c80; --accent:#2457d6; --accent-hover:#1c46ae;
+    --accent-soft:#e8eefc; --bad:#b42318;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0e131b; --surface:#151b25; --border:#262f3e; --border-strong:#36435a;
+      --text:#e7ebf1; --muted:#97a3b6; --accent:#5b8def; --accent-hover:#7aa3f5;
+      --accent-soft:#1c2a47; --bad:#f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg);
+    color:var(--text); font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+    font-size:14px; padding:20px;
+  }
+  .card {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:32px; width:100%; max-width:360px;
+    box-shadow:0 1px 3px rgba(16,24,40,.08), 0 4px 12px rgba(16,24,40,.04);
+  }
+  h1 { margin:0 0 4px; font-size:20px; font-weight:700; letter-spacing:-.01em; }
+  p.sub { margin:0 0 22px; color:var(--muted); font-size:13px; }
+  label { display:block; margin:14px 0 6px; font-size:12px; font-weight:600; color:var(--muted); }
+  input {
+    width:100%; padding:10px 12px; border:1px solid var(--border-strong); border-radius:8px;
+    font-size:14px; font-family:inherit; background:var(--surface); color:var(--text); outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  button {
+    width:100%; margin-top:20px; padding:11px; border:none; border-radius:8px;
+    background:var(--accent); color:#fff; font-weight:600; font-size:14px; font-family:inherit;
+    cursor:pointer; transition:background .15s;
+  }
+  button:hover { background:var(--accent-hover); }
+  button:disabled { opacity:.55; cursor:not-allowed; }
+  #err, #err2 { color:var(--bad); font-size:13px; margin-top:12px; min-height:18px; }
+  #setup { display:none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div id="login">
+    <h1>StreamFinder</h1>
+    <p class="sub">Sign in to continue</p>
+    <label for="id">ID</label>
+    <input id="id" autocomplete="username" autofocus>
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password">
+    <button id="go">Log in</button>
+    <div id="err"></div>
+  </div>
+
+  <div id="setup">
+    <h1>First-time setup</h1>
+    <p class="sub">Create the admin account. This only works on the computer running the server.</p>
+    <label for="sid">Admin ID</label>
+    <input id="sid" autocomplete="username">
+    <label for="spw">Password (6+ characters)</label>
+    <input id="spw" type="password" autocomplete="new-password">
+    <button id="sgo">Create admin</button>
+    <div id="err2"></div>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  // Check if this is first-time setup (no admin exists yet)
+  async function checkSetup() {
+    try {
+      const r = await fetch('/api/setup-status');
+      const j = await r.json();
+      if (j.needsSetup) {
+        $('login').style.display = 'none';
+        $('setup').style.display = 'block';
+        $('sid').focus();
+      }
+    } catch (e) {}
+  }
+  checkSetup();
+
+  // --- Login ---
+  async function doLogin() {
+    $('err').textContent = '';
+    $('go').disabled = true;
+    try {
+      const r = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: $('id').value, password: $('password').value })
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'Login failed');
+      location.href = '/';
+    } catch (e) {
+      $('err').textContent = e.message;
+      $('go').disabled = false;
+    }
+  }
+  $('go').addEventListener('click', doLogin);
+  $('password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  $('id').addEventListener('keydown', e => { if (e.key === 'Enter') $('password').focus(); });
+
+  // --- First-time admin setup ---
+  async function doSetup() {
+    $('err2').textContent = '';
+    $('sgo').disabled = true;
+    try {
+      const r = await fetch('/api/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: $('sid').value, password: $('spw').value })
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'Setup failed');
+      location.href = '/';
+    } catch (e) {
+      $('err2').textContent = e.message;
+      $('sgo').disabled = false;
+    }
+  }
+  $('sgo').addEventListener('click', doSetup);
+  $('spw').addEventListener('keydown', e => { if (e.key === 'Enter') doSetup(); });
+  $('sid').addEventListener('keydown', e => { if (e.key === 'Enter') $('spw').focus(); });
+</script>
+</body>
+</html>
